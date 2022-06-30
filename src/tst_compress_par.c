@@ -15,11 +15,11 @@
   Ed Hartnett, 6/28/20
 */
 
-#include <config.h>
-#include <nc_tests.h>
+/* #include <config.h> */
+/* #include <nc_tests.h> */
 #include <time.h>
 #include <sys/time.h> /* Extra high precision time info. */
-#include "err_macros.h"
+/* #include "err_macros.h" */
 #include <mpi.h>
 #include <H5public.h>
 

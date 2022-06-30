@@ -3,9 +3,12 @@
 # Ed Hartnett, 4/5/22
 cmake_minimum_required(VERSION 3.15)
 
+# Get the version.
 file(STRINGS "VERSION" pVersion)
+project(io-meter VERSION ${pVersion} LANGUAGES C Fortran)
 
-project(gributil VERSION ${pVersion} LANGUAGES C Fortran)
+# Find CMake code.
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Handle user options.
 option(ENABLE_DOCS "Enable generation of doxygen-based documentation." OFF)
