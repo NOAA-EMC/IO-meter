@@ -1,37 +1,98 @@
-name: CMake
+name: linux-mac-mpi-nceplibs
+on: [push, pull_request]
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+defaults:
+  run:
+    shell: bash -exo pipefail {0}
 
 jobs:
-  build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+  matrix-build-and-test:
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: gcc-9
+      FC: gfortran-9
+      CXX: g++-9
+    strategy:
+      matrix:
+        os: [macos-10.15, ubuntu-20.04]
+        compiler: [gcc-9]
+        mpi_type: [mpich, openmpi]
+        netcdf_version: [4.9.0]
 
     steps:
+    - name: install-dependencies
+      run: |
+        if [[ ${{ matrix.os }} == "ubuntu-20.04" ]]; then
+          sudo apt-get update
+          sudo apt-get install libpng-dev libjpeg-dev
+          if [[ ${{ matrix.mpi_type}} == "mpich" ]]; then
+             sudo apt-get install mpich      
+          elif [[ ${{ matrix.mpi_type }} == "openmpi" ]]; then
+             sudo apt-get install openmpi-bin
+          fi
+        elif [[ ${{ matrix.os }} == "macos-10.15" ]]; then
+            brew update
+          brew install wget
+          if [[ ${{ matrix.mpi_type}} == "mpich" ]]; then
+             brew install mpich      
+          elif [[ ${{ matrix.mpi_type }} == "openmpi" ]]; then
+             brew install open-mpi
+          fi
+          if [[ ${{ matrix.compiler }} == "gcc-9" ]]; then
+            sudo ln -sf /usr/local/bin/gfortran-9 /usr/local/bin/gfortran
+          elif  [[ ${{ matrix.compiler }} == "gcc-10" ]]; then
+            sudo ln -sf /usr/local/bin/gfortran-10 /usr/local/bin/gfortran
+          fi
+        fi
+        python3 -m pip install gcovr
+
+    - name: cache-netcdf
+      id: cache-netcdf
+      uses: actions/cache@v2
+      with:
+        path: ~/netcdf
+        key: netcdf-c-${{ matrix.netcdf_version }}-${{ runner.os }}-${{ matrix.mpi_type }}3
+
+    - name: build-hdf5
+      if: steps.cache-netcdf.outputs.cache-hit != 'true'
+      run: |
+        export CC=mpicc
+        wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.tar.gz &> /dev/null
+        tar -xzf hdf5-1.12.2.tar.gz
+        pushd hdf5-1.12.2
+        ./configure --prefix=${HOME}/netcdf --enable-parallel --disable-tools --disable-fortran --disable-cxx
+        make -j2
+        make install
+
+    - name: Look at config.log if error
+      shell: bash -l {0}
+      run: cat config.log
+      if: ${{ failure() }}
+           
+    - name: build-netcdf-c
+      if: steps.cache-netcdf.outputs.cache-hit != 'true'
+      run: |
+        export CC=mpicc
+        export CPPFLAGS=-I${HOME}/netcdf/include
+        export LDFLAGS=-L${HOME}/netcdf/lib
+        wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v${{ matrix.netcdf_version }}.tar.gz &> /dev/null
+        tar -xzf v${{ matrix.netcdf_version }}.tar.gz
+        cd netcdf-c-${{ matrix.netcdf_version }}
+        ./configure --prefix=${HOME}/netcdf --disable-dap --disable-utilities 
+        make -j2
+        make install
+
+    - name: Look at config.log if error
+      shell: bash -l {0}
+      run: cat config.log
+      if: ${{ failure() }}
+           
     - uses: actions/checkout@v3
 
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: |
+        export CC=mpicc        
+        export FC=mpifort
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_PREFIX_PATH='~/netcdf'
 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C ${{env.BUILD_TYPE}}
       

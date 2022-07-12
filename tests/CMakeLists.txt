@@ -1,0 +1,21 @@
+# This is the cmake build file for the tests directory of the
+# IO-meter project.
+#
+# Ed Hartnett, 7/12/22
+
+include_directories(${PROJECT_SOURCE_DIR})
+
+# Copy necessary test files from the source data directory to the
+# build data directory.
+# execute_process( COMMAND ${CMAKE_COMMAND} -E copy
+#     ${CMAKE_CURRENT_SOURCE_DIR}/data/input.nml ${CMAKE_CURRENT_BINARY_DIR}/input.nml)
+# execute_process( COMMAND ${CMAKE_COMMAND} -E copy
+#     ${CMAKE_CURRENT_SOURCE_DIR}/LSanSuppress.supp ${CMAKE_CURRENT_BINARY_DIR}/LSanSuppress.supp)
+
+# add_executable(ftst_read_filter_topo_nml ftst_readnml.F90)
+# add_test(NAME filter_topo-ftst_read_namelist COMMAND ftst_read_filter_topo_nml)
+# target_link_libraries(ftst_read_filter_topo_nml filter_topo_lib)
+
+# add_executable(ftst_fill_regional_halo ftst_fill_regional_halo.F90)
+# add_test(NAME filter_topo-ftst_fill_regional_halo COMMAND ftst_fill_regional_halo)
+# target_link_libraries(ftst_fill_regional_halo filter_topo_lib)
