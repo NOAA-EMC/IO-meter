@@ -25,7 +25,6 @@ jobs:
     steps:
     - name: install-dependencies
       run: |
-        echo "$HOME/mpi/bin" >> $GITHUB_PATH
         if [[ ${{ matrix.os }} == "ubuntu-20.04" ]]; then
           sudo apt-get update
           sudo apt-get install libpng-dev
