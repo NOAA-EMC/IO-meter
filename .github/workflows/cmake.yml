@@ -23,6 +23,85 @@ jobs:
         os: [macos-latest, ubuntu-latest]
  
     steps:
+    - name: install-dependencies
+      run: |
+        echo "$HOME/mpi/bin" >> $GITHUB_PATH
+        if [[ ${{ matrix.os }} == "ubuntu-20.04" ]]; then
+          sudo apt-get update
+          sudo apt-get install libpng-dev
+          sudo apt-get install libjpeg-dev
+        elif [[ ${{ matrix.os }} == "macos-10.15" ]]; then
+            brew update
+          brew install wget
+          if [[ ${{ matrix.compiler }} == "gcc-9" ]]; then
+            sudo ln -sf /usr/local/bin/gfortran-9 /usr/local/bin/gfortran
+          elif  [[ ${{ matrix.compiler }} == "gcc-10" ]]; then
+            sudo ln -sf /usr/local/bin/gfortran-10 /usr/local/bin/gfortran
+          fi
+        fi
+        python3 -m pip install gcovr
+
+    - name: cache-mpi
+      id: cache-mpi
+      uses: actions/cache@v2
+      with:
+        path: ~/mpi
+        key: mpi-${{ matrix.mpi_type }}-${{ runner.os }}
+
+    - name: build-mpi
+      if: steps.cache-mpi.outputs.cache-hit != 'true'
+      run: |
+        if [[ ${{ matrix.mpi_type}} == "mpich" ]]; then
+          wget http://www.mpich.org/static/downloads/3.3.2/mpich-3.3.2.tar.gz &> /dev/null
+          tar -xzf mpich-3.3.2.tar.gz
+          cd mpich-3.3.2
+          ./configure --prefix=$HOME/mpi --enable-fortran --enable-cxx
+          make -j2
+          make install
+        elif [[ ${{ matrix.mpi_type }} == "openmpi" ]]; then
+          wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.1.tar.gz &> /dev/null
+          tar -xzf openmpi-4.1.1.tar.gz
+          cd openmpi-4.1.1
+          if [[ ${{ matrix.os }} == "ubuntu-20.04" ]]; then
+            ./configure --prefix=$HOME/mpi --enable-mpi-fortran --enable-mpi-cxx
+          elif [[ ${{ matrix.os }} == "macos-10.15" ]]; then
+            ./configure --prefix=$HOME/mpi --enable-mpi-fortran --enable-mpi-cxx --enable-two-level-namespace
+          fi
+          make -j2
+          make install
+        fi
+
+    - name: cache-netcdf
+      id: cache-netcdf
+      uses: actions/cache@v2
+      with:
+        path: ~/netcdf
+        key: netcdf-c-${{ matrix.netcdf_version }}-${{ runner.os }}-${{ matrix.mpi_type }}3
+
+    - name: build-hdf5
+      if: steps.cache-netcdf.outputs.cache-hit != 'true'
+      run: |
+        export CC=mpicc
+        wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.7/src/hdf5-1.10.7.tar.gz &> /dev/null
+        tar -xzf hdf5-1.10.7.tar.gz
+        pushd hdf5-1.10.7
+        ./configure --prefix=${HOME}/netcdf --enable-parallel --disable-tools --disable-fortran --disable-cxx --enable-parallel-tests --disable-shared --enable-static
+        make -j2
+        make install
+           
+    - name: build-netcdf-c
+      if: steps.cache-netcdf.outputs.cache-hit != 'true'
+      run: |
+        export CC=mpicc
+        export CPPFLAGS=-I${HOME}/netcdf/include
+        export LDFLAGS=-L${HOME}/netcdf/lib
+        wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v${{ matrix.netcdf_version }}.tar.gz &> /dev/null
+        tar -xzf v${{ matrix.netcdf_version }}.tar.gz
+        cd netcdf-c-${{ matrix.netcdf_version }}
+        ./configure --prefix=${HOME}/netcdf --disable-dap --disable-utilities --disable-shared
+        make -j2
+        make install
+
     - uses: actions/checkout@v3
 
     - name: Configure CMake
