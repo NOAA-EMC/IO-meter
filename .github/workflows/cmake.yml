@@ -57,8 +57,6 @@ jobs:
       if: steps.cache-netcdf.outputs.cache-hit != 'true'
       run: |
         export CC=mpicc
-
-
         wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.tar.gz &> /dev/null
         tar -xzf hdf5-1.12.2.tar.gz
         pushd hdf5-1.12.2
@@ -92,6 +90,8 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_PREFIX_PATH='~/netcdf'
+      run: |
+        export CC=mpicc        
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_PREFIX_PATH='~/netcdf'
 
       
