@@ -78,10 +78,12 @@ jobs:
       if: steps.cache-netcdf.outputs.cache-hit != 'true'
       run: |
         export CC=mpicc
-        wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.7/src/hdf5-1.10.7.tar.gz &> /dev/null
-        tar -xzf hdf5-1.10.7.tar.gz
-        pushd hdf5-1.10.7
-        ./configure --prefix=${HOME}/netcdf --enable-parallel --disable-tools --disable-fortran --disable-cxx --enable-parallel-tests --disable-shared --enable-static
+
+
+        wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.2/src/hdf5-1.12.2.tar.gz &> /dev/null
+        tar -xzf hdf5-1.12.2.tar.gz
+        pushd hdf5-1.12.2
+        ./configure --prefix=${HOME}/netcdf --enable-parallel --disable-tools --disable-fortran --disable-cxx
         make -j2
         make install
            
@@ -94,7 +96,7 @@ jobs:
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v${{ matrix.netcdf_version }}.tar.gz &> /dev/null
         tar -xzf v${{ matrix.netcdf_version }}.tar.gz
         cd netcdf-c-${{ matrix.netcdf_version }}
-        ./configure --prefix=${HOME}/netcdf --disable-dap --disable-utilities --disable-shared
+        ./configure --prefix=${HOME}/netcdf --disable-dap --disable-utilities 
         make -j2
         make install
 
