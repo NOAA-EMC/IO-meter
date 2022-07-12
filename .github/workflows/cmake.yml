@@ -1,4 +1,4 @@
-name: linux-mac-mpi-nceplibs
+name: cmake
 on: [push, pull_request]
 
 defaults:
