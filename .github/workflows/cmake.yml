@@ -12,15 +12,15 @@ env:
 
 jobs:
   matrix-build-and-test:
-  runs-on: ${{ matrix.os }}
-  env:
-    CC: gcc-9
-    FC: gfortran-9
-    CXX: g++-9
-    BUILD_TYPE: Debug
-  strategy:
-    matrix:
-      os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      CC: gcc-9
+      FC: gfortran-9
+      CXX: g++-9
+      BUILD_TYPE: Debug
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
  
     steps:
     - uses: actions/checkout@v3
