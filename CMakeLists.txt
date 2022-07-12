@@ -25,8 +25,16 @@ endif()
 include(GNUInstallDirs)
 
 # Find packages.
+find_package(HDF5 1.10.6 REQUIRED C)
 find_package(NetCDF 4.3.3 REQUIRED C)
 find_package(MPI REQUIRED C)
+
+# Find math library.
+find_library(HAVE_LIBM NAMES math m libm)
+message(STATUS "Found Math library: ${HAVE_LIBM}")
+if(NOT HAVE_LIBM)
+  message(fatal_error "Unable to find the math library.")
+endif()
 
 # Determine whether or not to generate documentation.
 if(ENABLE_DOCS)
