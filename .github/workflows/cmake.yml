@@ -1,14 +1,9 @@
-name: CMake
+name: linux-mac-mpi-nceplibs
+on: [push, pull_request]
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+defaults:
+  run:
+    shell: bash -exo pipefail {0}
 
 jobs:
   matrix-build-and-test:
@@ -17,11 +12,14 @@ jobs:
       CC: gcc-9
       FC: gfortran-9
       CXX: g++-9
-      BUILD_TYPE: Debug
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
- 
+        os: [macos-10.15, ubuntu-20.04]
+        compiler: [gcc-9]
+        nceplibs_version: [develop, 1.4.0]
+        mpi_type: [mpich, openmpi]
+        netcdf_version: [4.7.4]
+
     steps:
     - name: install-dependencies
       run: |
