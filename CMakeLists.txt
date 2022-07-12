@@ -45,9 +45,9 @@ endif()
 add_subdirectory(src)
 
 # Turn on tests.
-#include(CTest)
-#if(BUILD_TESTING)
-#  add_subdirectory(tests)
-#endif()
+include(CTest)
+if(BUILD_TESTING)
+ add_subdirectory(tests)
+endif()
 
 
